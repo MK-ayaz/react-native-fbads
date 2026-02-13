@@ -1,4 +1,4 @@
-import { EventSubscription } from 'fbemitter';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { ReactNode } from 'react';
 import { findNodeHandle, requireNativeComponent } from 'react-native';
 import MediaView from './MediaViewManager';
@@ -11,15 +11,17 @@ import {
   MediaViewContext,
   MediaViewContextValueType,
   TriggerableContext,
-  TriggerableContextValueType
+  TriggerableContextValueType,
 } from './contexts';
 import { HasNativeAd, NativeAd } from './nativeAd';
 import AdsManager from './NativeAdsManager';
 import { areSetsEqual } from '../util/areSetsEqual';
+import type { Subscription } from './NativeAdsManager';
 
 interface NativeAdViewProps {
   adsManager: string;
   onAdLoaded: (args: { nativeEvent: NativeAd }) => void;
+  children?: ReactNode;
 }
 
 // tslint:disable-next-line:variable-name
@@ -38,20 +40,29 @@ interface AdWrapperProps {
   onAdLoaded?: (ad: NativeAd) => void;
 }
 
-export default <T extends HasNativeAd>(
-  // tslint:disable-next-line:variable-name
-  Component: React.ComponentType<T>
-) =>
-  class NativeAdWrapper extends React.Component<
+/**
+ * Higher-order component that wraps a component to receive native ad data.
+ * Handles all the plumbing for registering interactable views with Facebook SDK.
+ * @param Component The component to wrap
+ * @returns The wrapped component
+ */
+function withNativeAd<T extends HasNativeAd>(Component: React.ComponentType<T>) {
+  return class NativeAdWrapper extends React.Component<
     AdWrapperProps & T,
     AdWrapperState
   > {
-    private subscription?: EventSubscription;
-    private subscriptionError?: EventSubscription;
+    private subscription?: Subscription;
+
+    private subscriptionError?: Subscription;
+
     private nativeAdViewRef?: React.Component;
+
     private registerFunctionsForTriggerables: TriggerableContextValueType;
+
     private registerFunctionsForMediaView: MediaViewContextValueType;
+
     private registerFunctionsForAdIconView: AdIconViewContextValueType;
+
     private clickableChildrenNodeHandles: Map<ComponentOrClass, number>;
 
     constructor(props: AdWrapperProps & T) {
@@ -86,7 +97,7 @@ export default <T extends HasNativeAd>(
     /**
      * On init, register for updates on `adsManager` to know when it becomes available
      */
-    public componentDidMount() {
+    componentDidMount() {
       this.subscription = this.props.adsManager.onAdsLoaded(() =>
         this.setState({ canRequestAds: true })
       );
@@ -95,7 +106,7 @@ export default <T extends HasNativeAd>(
       );
     }
 
-    public componentDidUpdate(_: AdWrapperProps, prevState: AdWrapperState) {
+    componentDidUpdate(_: AdWrapperProps, prevState: AdWrapperState) {
       if (
         this.state.mediaViewNodeHandle === -1 ||
         this.state.adIconViewNodeHandle === -1
@@ -131,13 +142,14 @@ export default <T extends HasNativeAd>(
           this.state.adIconViewNodeHandle,
           [...this.state.clickableChildren]
         );
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
       }
     }
 
     /**
      * Clear subscription when component goes off screen
      */
-    public componentWillUnmount() {
+    componentWillUnmount() {
       if (this.subscription) {
         this.subscription.remove();
       }
@@ -148,11 +160,13 @@ export default <T extends HasNativeAd>(
 
     private registerMediaView = (mediaView: ComponentOrClass) =>
       this.setState({ mediaViewNodeHandle: findNodeHandle(mediaView) || -1 });
+
     private unregisterMediaView = () =>
       this.setState({ mediaViewNodeHandle: -1 });
 
     private registerAdIconView = (adIconView: ComponentOrClass) =>
       this.setState({ adIconViewNodeHandle: findNodeHandle(adIconView) || -1 });
+
     private unregisterAdIconView = () =>
       this.setState({ adIconViewNodeHandle: -1 });
 
@@ -190,7 +204,7 @@ export default <T extends HasNativeAd>(
       this.setState({ ad: nativeEvent }, this.handleAdUpdated);
     };
 
-    private handleNativeAdViewMount = (ref: React.Component) => {
+    private handleNativeAdViewMount = (ref: any) => {
       this.nativeAdViewRef = ref;
     };
 
@@ -222,6 +236,7 @@ export default <T extends HasNativeAd>(
 
     render() {
       // Cast to any until https://github.com/Microsoft/TypeScript/issues/10727 is resolved
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { adsManager, onAdLoaded, ...rest } = this.props as any;
 
       if (!this.state.canRequestAds) {
@@ -232,10 +247,13 @@ export default <T extends HasNativeAd>(
         <NativeAdView
           ref={this.handleNativeAdViewMount}
           adsManager={adsManager.toJSON()}
-          onAdLoaded={this.handleAdLoaded}
+          onAdLoaded={this.handleAdLoaded} // eslint-disable-line @typescript-eslint/no-unused-vars
         >
           {this.renderAdComponent(rest)}
         </NativeAdView>
       );
     }
   };
+}
+
+export default withNativeAd;

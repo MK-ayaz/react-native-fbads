@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React from 'react';
 
 export type ComponentOrClass = React.ComponentClass<any> | React.Component;
 

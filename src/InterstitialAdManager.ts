@@ -1,26 +1,46 @@
-import { NativeModules } from 'react-native';
+import NativeModuleRegistry from './native/NativeModuleRegistry';
+import { withErrorHandling, validatePlacementId, FacebookAdsErrorCode } from './utils/errorHandling';
 
-const { CTKInterstitialAdManager } = NativeModules;
-
-export default {
+/**
+ * Enterprise-grade Interstitial Ad Manager with full error handling
+ */
+const InterstitialAdManager = {
   /**
-   * Load interstitial ad for a given placementId and shows it
+   * Load and display an interstitial ad immediately
    */
-  showAd(placementId: string): Promise<boolean> {
-    return CTKInterstitialAdManager.showAd(placementId);
+  async showAd(placementId: string): Promise<boolean> {
+    validatePlacementId(placementId);
+    return withErrorHandling(
+      NativeModuleRegistry.Interstitial.showAd(placementId),
+      'InterstitialAdManager.showAd',
+      FacebookAdsErrorCode.AD_DISPLAY_FAILED
+    );
   },
 
   /**
-   * Preloads an interstitial ad for a given placementId
+   * Preload an interstitial ad without displaying it
    */
-  preloadAd(placementId: string): Promise<boolean> {
-    return CTKInterstitialAdManager.preloadAd(placementId);
+  async preloadAd(placementId: string): Promise<boolean> {
+    validatePlacementId(placementId);
+    return withErrorHandling(
+      NativeModuleRegistry.Interstitial.preloadAd(placementId),
+      'InterstitialAdManager.preloadAd',
+      FacebookAdsErrorCode.AD_LOAD_FAILED
+    );
   },
 
   /**
-   * Shows an already preloaded Ad
+   * Display a previously preloaded interstitial ad
    */
-  showPreloadedAd(placementId: string): Promise<boolean> {
-    return CTKInterstitialAdManager.showPreloadedAd(placementId);
-  }
+  async showPreloadedAd(placementId: string): Promise<boolean> {
+    validatePlacementId(placementId);
+    return withErrorHandling(
+      NativeModuleRegistry.Interstitial.showPreloadedAd(placementId),
+      'InterstitialAdManager.showPreloadedAd',
+      FacebookAdsErrorCode.AD_DISPLAY_FAILED
+    );
+  },
 };
+
+export default InterstitialAdManager;
+

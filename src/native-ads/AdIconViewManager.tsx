@@ -4,9 +4,8 @@ import { requireNativeComponent, ViewProps } from 'react-native';
 import {
   AdIconViewContext,
   AdIconViewContextValueType,
-  ComponentOrClass
+  ComponentOrClass,
 } from './contexts';
-import { NativeAd } from './nativeAd';
 
 export type AdIconViewProps = ViewProps;
 

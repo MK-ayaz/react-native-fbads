@@ -1,53 +1,146 @@
-import React from 'react';
-import { requireNativeComponent, StyleProp, ViewStyle } from 'react-native';
+import React, { useCallback, useMemo } from 'react';
+import {
+  requireNativeComponent,
+  StyleProp,
+  ViewStyle,
+  View,
+  StyleSheet,
+} from 'react-native';
+import { FacebookAdsException, validatePlacementId } from './utils/errorHandling';
 
-type AdType = 'large' | 'standard';
+type AdSize = 'large' | 'standard';
+
+export interface BannerViewProps {
+  /**
+   * Type of banner: 'standard' (50pt height) or 'large' (90pt height)
+   */
+  type: AdSize;
+
+  /**
+   * Facebook placement ID for this banner
+   */
+  placementId: string;
+
+  /**
+   * Callback when the ad is pressed/clicked
+   */
+  onPress?: () => void;
+
+  /**
+   * Callback when the ad fails to load
+   */
+  onError?: (error: FacebookAdsException) => void;
+
+  /**
+   * Callback when the ad successfully loads
+   */
+  onLoad?: () => void;
+
+  /**
+   * Custom styles for the banner container
+   */
+  style?: StyleProp<ViewStyle>;
+
+  /**
+   * Test ID for testing purposes
+   */
+  testID?: string;
+}
 
 interface NativeBannerViewProps {
   size: number;
-  onAdPress: Function;
-  onAdError: Function;
-  onAdLoad: Function;
+  onAdPress: () => void;
+  onAdError: (error: string) => void;
+  onAdLoad: () => void;
   style: StyleProp<ViewStyle>;
   placementId: string;
+  testID?: string;
 }
 
-interface BannerViewProps {
-  type: AdType;
-  placementId: string;
-  onPress: Function;
-  onError: Function;
-  onLoad: Function;
-  style: StyleProp<ViewStyle>;
-}
+// Native component bridge
+const CTKBannerView = requireNativeComponent<NativeBannerViewProps>('CTKBannerView');
 
-// tslint:disable-next-line:variable-name
-const CTKBannerView = requireNativeComponent<NativeBannerViewProps>(
-  'CTKBannerView'
-);
-
-const sizeForType: Record<AdType, number> = {
+const SIZE_MAP: Record<AdSize, number> = {
   large: 90,
   standard: 50,
 };
 
-const getSizeForType = (type: AdType) => sizeForType[type];
+const styles = StyleSheet.create({
+  container: {
+    overflow: 'hidden',
+  },
+});
 
-// tslint:disable-next-line:variable-name
-const BannerView = (props: BannerViewProps) => {
-  const { type, onPress, onError, onLoad, style, ...restProps } = props;
-  const size = getSizeForType(type);
+/**
+ * Facebook Banner Ad component
+ * Modern functional component with full type safety
+ */
+const BannerView = React.forwardRef<View, BannerViewProps>(
+  (
+    {
+      type,
+      placementId,
+      onPress,
+      onError,
+      onLoad,
+      style,
+      testID,
+    },
+    ref
+  ) => {
+    const size = SIZE_MAP[type];
 
-  return (
-    <CTKBannerView
-      size={size}
-      onAdPress={onPress}
-      onAdError={onError}
-      onAdLoad={onLoad}
-      style={[style, { height: size }]}
-      {...restProps}
-    />
-  );
-};
+    // Validate placement ID
+    useMemo(() => {
+      try {
+        validatePlacementId(placementId);
+      } catch (error) {
+        onError?.(error as FacebookAdsException);
+      }
+    }, [placementId, onError]);
+
+    const handleAdPress = useCallback(() => {
+      onPress?.();
+    }, [onPress]);
+
+    const handleAdError = useCallback((message: string) => {
+      const error = new FacebookAdsException(
+        'AD_LOAD_FAILED' as any,
+        'BannerView',
+        message
+      );
+      onError?.(error);
+    }, [onError]);
+
+    const handleAdLoad = useCallback(() => {
+      onLoad?.();
+    }, [onLoad]);
+
+    return (
+      <View
+        ref={ref}
+        style={[
+          styles.container,
+          style,
+          {
+            height: size,
+          },
+        ]}
+        testID={testID}
+      >
+        <CTKBannerView
+          size={size}
+          placementId={placementId}
+          onAdPress={handleAdPress}
+          onAdError={handleAdError}
+          onAdLoad={handleAdLoad}
+          style={{ flex: 1 }}
+        />
+      </View>
+    );
+  }
+);
+
+BannerView.displayName = 'BannerView';
 
 export default BannerView;

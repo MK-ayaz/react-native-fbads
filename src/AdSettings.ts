@@ -1,102 +1,145 @@
-import { NativeModules, Platform } from 'react-native';
+import { Platform } from 'react-native';
+import NativeModuleRegistry from './native/NativeModuleRegistry';
+import { withErrorHandling } from './utils/errorHandling';
 
-const { CTKAdSettingsManager } = NativeModules;
+export type { SDKLogLevel, TrackingStatus } from './native/NativeModuleRegistry';
 
-type SDKLogLevel =
-  | 'none'
-  | 'debug'
-  | 'verbose'
-  | 'warning'
-  | 'error'
-  | 'notification';
-
-export type TrackingStatus =
-  | 'unavailable'
-  | 'denied'
-  | 'authorized'
-  | 'restricted'
-  | 'not-determined';
-
-export default {
+/**
+ * Facebook Ads Settings API with type safety and error handling
+ */
+const AdSettings = {
   /**
-   * Contains hash of the device id
+   * Get the hash of the device id for test ads
    */
   get currentDeviceHash(): string {
-    return CTKAdSettingsManager.currentDeviceHash;
+    try {
+      return NativeModuleRegistry.AdSettings.currentDeviceHash;
+    } catch (error) {
+      console.error('[FacebookAds] Failed to get device hash:', error);
+      return '';
+    }
   },
 
   /**
-   * Registers given device with `deviceHash` to receive test Facebook ads.
+   * Register a device to receive test ads
    */
-  addTestDevice(deviceHash: string) {
-    CTKAdSettingsManager.addTestDevice(deviceHash);
-  },
-  /**
-   * Clears previously set test devices
-   */
-  clearTestDevices() {
-    CTKAdSettingsManager.clearTestDevices();
-  },
-  /**
-   * Sets current SDK log level
-   */
-  setLogLevel(logLevel: SDKLogLevel) {
-    CTKAdSettingsManager.setLogLevel(logLevel);
-  },
-  /**
-   * Specifies whether ads are treated as child-directed
-   */
-  setIsChildDirected(isDirected: boolean) {
-    CTKAdSettingsManager.setIsChildDirected(isDirected);
-  },
-  /**
-   * Sets mediation service name
-   */
-  setMediationService(mediationService: string) {
-    CTKAdSettingsManager.setMediationService(mediationService);
-  },
-  /**
-   * Sets URL prefix
-   */
-  setUrlPrefix(urlPrefix: string) {
-    CTKAdSettingsManager.setUrlPrefix(urlPrefix);
+  addTestDevice(deviceHash: string): void {
+    try {
+      if (!deviceHash || typeof deviceHash !== 'string') {
+        throw new Error('Device hash must be a non-empty string');
+      }
+      NativeModuleRegistry.AdSettings.addTestDevice(deviceHash);
+    } catch (error) {
+      console.error('[FacebookAds] Failed to add test device:', error);
+    }
   },
 
   /**
-   * Requests permission to track the user.
-   *
-   * Requires a [`NSUserTrackingUsageDescription`](https://developer.apple.com/documentation/bundleresources/information_property_list/nsusertrackingusagedescription) in your `Info.plist`
-   *
-   * @platform iOS 14
+   * Clear all test devices
    */
-  async requestTrackingPermission(): Promise<TrackingStatus> {
-    if (Platform.OS !== 'ios') return 'unavailable';
-    return await CTKAdSettingsManager.requestTrackingPermission();
-  },
-  /**
-   * Gets the current tracking status.
-   *
-   * @platform iOS 14
-   */
-  async getTrackingStatus(): Promise<TrackingStatus> {
-    if (Platform.OS !== 'ios') return 'unavailable';
-    return await CTKAdSettingsManager.getTrackingStatus();
+  clearTestDevices(): void {
+    try {
+      NativeModuleRegistry.AdSettings.clearTestDevices();
+    } catch (error) {
+      console.error('[FacebookAds] Failed to clear test devices:', error);
+    }
   },
 
   /**
-   * Enable or disable the automatic Advertiser ID Collection. On iOS 14 it is recommended to only enable automatic Advertiser ID Collection when the user has granted permission to track. (@see `requestTrackingPermission()`)
+   * Set SDK log level
+   */
+  setLogLevel(logLevel: 'none' | 'debug' | 'verbose' | 'warning' | 'error' | 'notification'): void {
+    try {
+      NativeModuleRegistry.AdSettings.setLogLevel(logLevel);
+    } catch (error) {
+      console.error('[FacebookAds] Failed to set log level:', error);
+    }
+  },
+
+  /**
+   * Set whether ads are child-directed
+   */
+  setIsChildDirected(isDirected: boolean): void {
+    try {
+      NativeModuleRegistry.AdSettings.setIsChildDirected(isDirected);
+    } catch (error) {
+      console.error('[FacebookAds] Failed to set child-directed status:', error);
+    }
+  },
+
+  /**
+   * Set mediation service
+   */
+  setMediationService(mediationService: string): void {
+    try {
+      NativeModuleRegistry.AdSettings.setMediationService(mediationService);
+    } catch (error) {
+      console.error('[FacebookAds] Failed to set mediation service:', error);
+    }
+  },
+
+  /**
+   * Set URL prefix
+   */
+  setUrlPrefix(urlPrefix: string): void {
+    try {
+      NativeModuleRegistry.AdSettings.setUrlPrefix(urlPrefix);
+    } catch (error) {
+      console.error('[FacebookAds] Failed to set URL prefix:', error);
+    }
+  },
+
+  /**
+   * Request app tracking permission (iOS 14+)
+   */
+  async requestTrackingPermission(): Promise<'unavailable' | 'denied' | 'authorized' | 'restricted' | 'not-determined'> {
+    if (Platform.OS !== 'ios') {
+      return 'unavailable';
+    }
+    return withErrorHandling(
+      NativeModuleRegistry.AdSettings.requestTrackingPermission(),
+      'requestTrackingPermission'
+    );
+  },
+
+  /**
+   * Get current tracking status (iOS 14+)
+   */
+  async getTrackingStatus(): Promise<'unavailable' | 'denied' | 'authorized' | 'restricted' | 'not-determined'> {
+    if (Platform.OS !== 'ios') {
+      return 'unavailable';
+    }
+    return withErrorHandling(
+      NativeModuleRegistry.AdSettings.getTrackingStatus(),
+      'getTrackingStatus'
+    );
+  },
+
+  /**
+   * Enable or disable the automatic Advertiser ID Collection
    */
   setAdvertiserIDCollectionEnabled(enabled: boolean): void {
-    CTKAdSettingsManager.setAdvertiserIDCollectionEnabled(enabled);
+    try {
+      if (Platform.OS === 'ios') {
+        NativeModuleRegistry.AdSettings.setAdvertiserIDCollectionEnabled?.(enabled);
+      }
+    } catch (error) {
+      console.error('[FacebookAds] Failed to set advertiser ID collection:', error);
+    }
   },
 
   /**
-   * Enable or disable ads tracking. Only works for iOS 14+. In order to ask user for tracking permission (@see `requestTrackingPermission()`).
+   * Enable or disable ads tracking (iOS 14+)
    */
   setAdvertiserTrackingEnabled(enabled: boolean): void {
-    if (Platform.OS !== 'ios') {
-      return;
+    try {
+      if (Platform.OS === 'ios') {
+        NativeModuleRegistry.AdSettings.setAdvertiserTrackingEnabled?.(enabled);
+      }
+    } catch (error) {
+      console.error('[FacebookAds] Failed to set advertiser tracking:', error);
     }
-    CTKAdSettingsManager.setAdvertiserTrackingEnabled(enabled);
   },
 };
+
+export default AdSettings;

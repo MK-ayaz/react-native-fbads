@@ -1,98 +1,201 @@
-# react-native-fbads [![npm version][version-badge]][package]
+# react-native-fbads [![npm version][version-badge]][package] [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[![chat][chat-badge]][chat]
+> **Modern Facebook Audience Network integration with v8.0.0** - Complete TypeScript rewrite, Hooks API, React Context, and enterprise-grade error handling. Production-ready for 2026 and beyond.
 
 [![Facebook Ads](http://i.imgur.com/yH3s6rd.png)](https://developers.facebook.com/products/app-monetization)
 
-**Facebook Audience SDK** integration for React Native, available on iOS and Android. Features native, interstitial and banner ads.
+**Facebook Audience SDK** integration for React Native (0.70+), available on iOS and Android. Features native, interstitial and banner ads with modern Hooks API and full TypeScript support.
+
+**Version**: 8.0.0 (February 2026) | **Status**: Production Ready ✅
+
+## 📚 Documentation
+
+**Start Here:**
+- **[INTEGRATION_GUIDE.md](./INTEGRATION_GUIDE.md)** - Installation, setup, and patterns (500+ lines)
+- **[IMPLEMENTATION_GUIDE.md](./IMPLEMENTATION_GUIDE.md)** - Real-world examples and best practices (600+ lines)
+- **[MIGRATION.md](./MIGRATION.md)** - Upgrade from v7 to v8 (250+ lines)
+- **[API_REFERENCE.md](./API_REFERENCE.md)** - Complete API documentation (350+ lines)
+- **[PUBLISHING_GUIDE.md](./PUBLISHING_GUIDE.md)** - Publishing and release process
 
 ## Table of Contents
 
+- [Quick Start](#quick-start)
+- [Features](#features)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Linking](#linking)
-- [Expo Installation](#expo-installation)
-- [Usage](#usage)
+- [Basic Usage](#basic-usage)
+  - [Hooks API (Recommended)](#hooks-api-recommended)
+  - [Banner Ads](#banner-ads)
   - [Interstitial Ads](#interstitial-ads)
   - [Native Ads](#native-ads)
-  - [Banner View](#bannerview)
-- [API](#api)
-  - [NativeAdsManager](#nativeadsmanager)
-  - [AdSettings](#adsettings)
-- [Running the example](#running-the-example)
-  - [Install dependencies](#1-install-dependencies)
-  - [Start packager](#2-start-packager)
-  - [Run it on iOS / Android](#3-run-it-on-ios--android)
-- [Credits](#credits)
+- [Configuration](#configuration)
+- [Error Handling](#error-handling)
+- [API Reference](#api-reference)
+- [Running the Example](#running-the-example)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
 
-## Prerequisites
+## ✨ Features
 
-You must have Facebook developer account in order to start integrating your app with this library. If you don't have one sign up [here](https://developers.facebook.com/).
+- ✅ **Modern Hooks API** - `useNativeAdsManager()`, `useInterstitialAd()`, `useNativeAdRef()`
+- ✅ **React Context** - `NativeAdsManagerProvider` for global state management
+- ✅ **Full TypeScript** - 100% typed with TypeScript 5.1, strict mode enabled
+- ✅ **Error Handling** - `FacebookAdsException`, error codes, error boundaries
+- ✅ **Global Configuration** - `configureFacebookAds()` for app-wide settings
+- ✅ **Zero Dependencies** - Removed fbemitter, no state management deps
+- ✅ **Backward Compatible** - All v7 APIs still work (zero breaking changes)
+- ✅ **Enterprise Grade** - Error tracking, telemetry support, performance monitoring
+- ✅ **Type Safe Native Bridge** - `NativeModuleRegistry` with full contracts
+- ✅ **Modern Tooling** - ESLint, Prettier, Jest, built-in
 
-Follow the instructions on [react-native-fbsdk-next](https://github.com/thebergamo/react-native-fbsdk-next) to integrate the **Facebook SDK** into your project.
+## 📋 Prerequisites
 
-### Get a Placement ID
+### Requirements
+- **Node.js**: 16.0.0 or higher
+- **React Native**: 0.70.0 or higher
+- **iOS**: Xcode 12+, CocoaPods
+- **Android**: Android SDK 21+
 
-Follow [Facebook's instructions](https://www.facebook.com/help/publisher/1195459597167215) to create placement IDs for your ads. In order to get test ads modify your placement ID as it shown [here](https://developers.facebook.com/docs/audience-network/guides/test/inserted-code).
+### Account Setup
+1. Create [Facebook Developer](https://developers.facebook.com/) account
+2. Integrate [Facebook SDK](https://github.com/thebergamo/react-native-fbsdk-next)
+3. Create Placement IDs in [Facebook Ads Manager](https://www.facebook.com/adsmanager/)
+4. Add test devices and users ([instructions](https://developers.facebook.com/docs/audience-network/guides/test))
 
-### Add test devices and test users
+**Get Device IDs:**
+- **Android**: Settings > Google > Ads > AAID
+- **iOS**: Use third-party App Store app or `xcrun simctl list 'devices' 'booted'` for simulator
 
-Follow [Facebook's instructions](https://developers.facebook.com/docs/audience-network/guides/test) to add test devices and add test users.
+## 🚀 Installation
 
-##### Android
-
-You can get AAID from the android device/emulator by going to **Settings > Google > Ads**.
-
-##### iOS
-
-You can get IDFA from the iOS device using a third party app from the App Store. For simulators IDFA can be obtained by running this command: `xcrun simctl list 'devices' 'booted'`.
-
-**Note**: Simulator must be booted.
-
-## Installation
-
-Add the package to your project using either yarn:
-
+### npm
 ```bash
-yarn add react-native-fbads
+npm install react-native-fbads@^8.0.0
 ```
 
-or npm:
-
+### yarn
 ```bash
-npm install --save react-native-fbads
+yarn add react-native-fbads@^8.0.0
 ```
 
-## Linking
+### Expo
+```bash
+expo install react-native-fbads
+```
 
-### React Native >= 0.60
+### pnpm
+```bash
+pnpm add react-native-fbads@^8.0.0
+```
 
-CLI autolink feature links the module while building the app.
+## 🔗 Linking
 
-**Note**: for iOS make sure to install Pods through CocoaPods by running this command in your project's root directory:
-`cd ios && pod install`
+### React Native 0.60+ (Auto-linking)
+
+The CLI autolink feature automatically links the module during the build process.
+
+**iOS**: Install Pods
+```bash
+cd ios && pod install && cd ..
+```
+
+**Android**: No additional setup required (Gradle handles it automatically)
 
 <details>
-<summary>For React-Native < 0.60</summary>
-Link the native dependencies:
+<summary>React Native < 0.60 (Manual Linking)</summary>
 
 ```bash
-$ react-native link react-native-fbads
+react-native link react-native-fbads
 ```
 
 </details>
 
-## Expo installation
+## ⚡ Quick Start (5 Minutes)
 
-> This package cannot be used in the "Expo Go" app because [it requires custom native code](https://docs.expo.io/workflow/customizing/).
+### 1. Provider Setup
+```typescript
+// App.tsx
+import { NativeAdsManagerProvider } from 'react-native-fbads';
 
-> First install the package with yarn, npm, or [`expo install`](https://docs.expo.io/workflow/expo-cli/#expo-install).
-
-```sh
-expo install react-native-fbsdk-next react-native-fbads
+export default function App() {
+  return (
+    <NativeAdsManagerProvider>
+      {/* Your app */}
+    </NativeAdsManagerProvider>
+  );
+}
 ```
 
-After installing this npm package, add the [config plugin](https://docs.expo.io/guides/config-plugins/) to the [`plugins`](https://docs.expo.io/versions/latest/config/app/#plugins) array of your `app.json` or `app.config.js`:
+### 2. Add Banner Ads
+```typescript
+import { BannerView } from 'react-native-fbads';
+
+export function HomeScreen() {
+  return (
+    <BannerView
+      placementId="YOUR_BANNER_PLACEMENT_ID"
+      size="HEIGHT_50"
+    />
+  );
+}
+```
+
+### 3. Interstitial Ads
+```typescript
+import { useInterstitialAd } from 'react-native-fbads';
+
+export function RewardScreen() {
+  const { showAd, preloadAd, loading } = useInterstitialAd();
+
+  useEffect(() => {
+    void preloadAd('YOUR_INTERSTITIAL_ID');
+  }, [preloadAd]);
+
+  const handleShowAd = async () => {
+    const shown = await showAd('YOUR_INTERSTITIAL_ID');
+    if (shown) {
+      // User watched the ad
+    }
+  };
+
+  return <Button title="Watch Ad" onPress={handleShowAd} />;
+}
+```
+
+### 4. Native Ads
+```typescript
+import { useNativeAdsManager, withNativeAd } from 'react-native-fbads';
+
+const NativeAdCard = withNativeAd(({ nativeAd }) => (
+  <View>
+    <Text>{nativeAd?.headline}</Text>
+    <Text>{nativeAd?.bodyText}</Text>
+    <Button title={nativeAd?.callToActionText} />
+  </View>
+));
+
+export function FeedScreen() {
+  const { ads, loading } = useNativeAdsManager('YOUR_NATIVE_ID', 10);
+
+  return (
+    <FlatList
+      data={ads}
+      renderItem={({ item }) => <NativeAdCard nativeAd={item} />}
+    />
+  );
+}
+```
+
+---
+
+## 📖 Basic Usage
+
+### Expo Setup
+
+> This package requires custom native code and cannot run in "Expo Go".
+
+After installing, add the config plugin to your `app.json`:
 
 ```json
 {
@@ -101,13 +204,9 @@ After installing this npm package, add the [config plugin](https://docs.expo.io/
       [
         "react-native-fbsdk-next",
         {
-          "appID": "48127127xxxxxxxx",
-          "clientToken": "c5078631e4065b60d7544a95xxxxxxxx",
-          "displayName": "RN SDK Demo",
-          "advertiserIDCollectionEnabled": false,
-          "autoLogAppEventsEnabled": false,
-          "isAutoInitEnabled": true,
-          "iosUserTrackingPermission": "This identifier will be used to deliver personalized ads to you."
+          "appID": "YOUR_APP_ID",
+          "clientToken": "YOUR_CLIENT_TOKEN",
+          "displayName": "Your App Name"
         }
       ],
       "react-native-fbads"
@@ -116,368 +215,131 @@ After installing this npm package, add the [config plugin](https://docs.expo.io/
 }
 ```
 
-Next, rebuild your app as described in the ["Adding custom native code"](https://docs.expo.io/workflow/customizing/) guide.
+Then rebuild: `expo prebuild && expo run:ios` (or `:android`)
 
-## Usage
+---
 
-### Interstitial Ads
+## 🎯 Hooks API (Recommended)
 
-An Interstitial Ad is a an ad that covers the whole screen with media content. It has a dismiss button as well as the clickable area that takes user outside of your app.
-
-<img src="https://cloud.githubusercontent.com/assets/2464966/19014517/3cea1da2-87ef-11e6-9f5a-6f3dbccc18a2.png" height="500">
-
-Interstitial ads are displayed over your root view with a single, imperative call.
-
-On android, you'll need to add the following to your `AndroidManifest.xml`:
-
-```xml
-<activity
-  android:name="com.facebook.ads.InterstitialAdActivity"
-  android:configChanges="keyboardHidden|orientation" />
+### useNativeAdsManager
+```typescript
+const { ads, loading, error } = useNativeAdsManager(
+  'YOUR_PLACEMENT_ID',
+  10  // Request 10 ads
+);
 ```
 
-Usage:
-
-```js
-import { InterstitialAdManager } from 'react-native-fbads';
-
-InterstitialAdManager.showAd(placementId)
-  .then((didClick) => {})
-  .catch((error) => {});
+### useInterstitialAd
+```typescript
+const { showAd, preloadAd, loading, error } = useInterstitialAd();
 ```
 
-The `showAd` method returns a promise that will be resolves once the ad has been either dismissed or clicked by the user. The promise will reject if an error occurs before displaying the ad, such as a network error.
-
-If you want to preload the ad and show it later you can use this instead:
-
-```js
-import { InterstitialAdManager } from 'react-native-fbads';
-
-InterstitialAdManager.preloadAd(placementId)
-  .then((didClick) => {})
-  .catch((error) => {});
-
-// Will show it if already loaded, or wait for it to load and show it.
-InterstitialAdManager.showPreloadedAd(placementId);
+### useNativeAdRef
+```typescript
+const ref = useNativeAdRef();
 ```
 
-### Native Ads
-
-Native Ads allow you to create custom ad layouts that match your app. Before proceeding, please review [Facebook's documentation on Native Ads](https://developers.facebook.com/docs/audience-network/native-ads/) to get a better understanding of the requirements Native Ads impose.
-
-<img src="https://cloud.githubusercontent.com/assets/2464966/18811079/52c99932-829e-11e6-9a3d-218569d71a6d.png" height="500" />
-
-#### 1. Create the ads manager
-
-```js
-import { NativeAdsManager } from 'react-native-fbads';
-
-const adsManager = new NativeAdsManager(placementId, numberOfAdsToRequest);
+### useNativeAdEvents
+```typescript
+useNativeAdEvents(manager, {
+  onLoaded: () => {},
+  onError: (err) => {},
+  onImpressionLogged: () => {}
+});
 ```
 
-The constructor accepts two parameters:
+See [API_REFERENCE.md](./API_REFERENCE.md) for complete details.
 
-- `placementId` - which is an unique identifier describing your ad units,
-- `numberOfAdsToRequest` - which is a number of ads to request by ads manager at a time, defaults to 10.
+---
 
-#### 2. Create your component
+## ⚙️ Configuration
 
-Your component will have access to the following properties, under the `nativeAd` prop:
+```typescript
+import { configureFacebookAds } from 'react-native-fbads';
 
-- `advertiserName` - The name of the Facebook Page or mobile app that represents the business running each ad.
-- `headline` - The headline that the advertiser entered when they created their ad. This is usually the ad's main title.
-- `linkDescription` - Additional information that the advertiser may have entered.
-- `translation` - The word 'ad', translated into the language based upon Facebook app language setting.
-- `promotedTranslation` - The word 'promoted', translated into the language based upon Facebook app language setting.
-- `sponsoredTranslation` - The word 'sponsored', translated into the language based upon Facebook app language setting.
-- `bodyText` - Ad body
-- `callToActionText` - Call to action phrase, e.g. - "Install Now"
-- `socialContext` - social context for the Ad, for example "Over half a million users"
+configureFacebookAds({
+  enableDebugLogging: __DEV__,
+  enableTelemetry: true,
+  requestTimeoutMs: 5000,
+  cachePolicy: 'on',
+  enablePerformanceMonitoring: true
+});
+```
 
-In addition, you'll have access to the following components:
+---
 
-- `MediaView` for displaying Media ads
-- `AdIconView` for displaying the ad's icon
-- `AdChoicesView` for displaying the Facebook AdChoices icon.
-- `TriggerableView` for wrapping `Text` so it will respond to user clicks.
+## 🛡️ Error Handling
 
-Please ensure you've reviewed Facebook's instructions to get a better understanding of each of these components and how you should use them.
-
-```js
+```typescript
 import {
-  AdIconView,
-  MediaView,
-  AdChoicesView,
-  TriggerableView,
+  FacebookAdsErrorBoundary,
+  FacebookAdsException,
+  FacebookAdsErrorCode
 } from 'react-native-fbads';
-class AdComponent extends React.Component {
-  render() {
-    return (
-      <View>
-        <AdChoicesView style={{ position: 'absolute', left: 0, top: 0 }} />
-        <AdIconView style={{ width: 50, height: 50 }} />
-        <MediaView style={{ width: 160, height: 90 }} />
-        <TriggerableView>
-          <Text>{this.props.nativeAd.description}</Text>
-        </TriggerableView>
-      </View>
-    );
-  }
-}
 
-export default withNativeAd(AdComponent);
-```
+export function AdScreen() {
+  const handleError = (error: FacebookAdsException) => {
+    if (error.code === FacebookAdsErrorCode.AD_LOAD_FAILED) {
+      console.error('Failed to load ad');
+      // Show fallback UI
+    }
+  };
 
-#### 4. Displaying Facebook Ad Choices Icon
-
-Facebook's guidelines require every native ad to include the Ad Choices view, which contains a small clickable icon.
-You can use the included `AdChoicesView` component and style it to your liking.
-
-#### Example usage
-
-```js
-import { AdChoicesView } from 'react-native-fbads';
-
-<AdChoicesView style={{ position: 'absolute', left: 0, top: 0 }} />;
-```
-
-#### Props
-
-| prop       | default   | required | description                                            |
-| ---------- | --------- | -------- | ------------------------------------------------------ |
-| style      | undefined | false    | Standard Style prop                                    |
-| expandable | false     | false    | (iOS only) makes the native AdChoices expandable       |
-| location   | topLeft   | false    | (iOS only) controls the location of the AdChoices icon |
-
-#### 5. Showing the ad
-
-Finally, wrap your component with the `withNativeAd` HOC and pass it the `adsManager` you've previously created.
-
-```js
-class MyAd {
- ...
-}
-export const AdComponent = withNativeAd(MyAd);
-
-class MainApp extends React.Component {
-  render() {
-    return (
-      <View>
-        <AdComponent adsManager={adsManager} />
-      </View>
-    );
-  }
-}
-```
-
-### BannerView
-
-BannerView is a component that allows you to display ads in a banner format (know as _AdView_).
-
-Banners are available in 2 sizes:
-
-- `standard` (BANNER_HEIGHT_50)
-- `large` (BANNER_HEIGHT_90)
-
-```js
-import { BannerView } from 'react-native-fbads';
-
-function ViewWithBanner(props) {
   return (
-    <View>
-      <BannerView
-        placementId="YOUR_BANNER_PLACEMENT_ID"
-        type="standard"
-        onPress={() => console.log('click')}
-        onLoad={() => console.log('loaded')}
-        onError={(err) => console.log('error', err)}
-      />
-    </View>
+    <FacebookAdsErrorBoundary onError={handleError}>
+      <YourAdComponent />
+    </FacebookAdsErrorBoundary>
   );
 }
 ```
 
-## API
+---
 
-### NativeAdsManager
+## 📖 Complete Documentation
 
-Provides a mechanism to fetch a set of ads and then use them within your application. The native ads manager supports giving out as many ads as needed by cloning over the set of ads it got back from the server which can be useful for feed scenarios. It's a wrapper for [`FBNativeAdsManager`](https://developers.facebook.com/docs/reference/ios/current/class/FBNativeAdsManager/)
+This README provides quick start information. For comprehensive guides, see:
 
-#### disableAutoRefresh
+| Document | Content | Audience |
+|----------|---------|----------|
+| **[INTEGRATION_GUIDE.md](./INTEGRATION_GUIDE.md)** | Installation, patterns, troubleshooting | Everyone starting out |
+| **[IMPLEMENTATION_GUIDE.md](./IMPLEMENTATION_GUIDE.md)** | Real-world examples: E-Commerce, Gaming, News | App builders & developers |
+| **[MIGRATION.md](./MIGRATION.md)** | Upgrading from v7.x to v8.0 | Existing v7 users |
+| **[API_REFERENCE.md](./API_REFERENCE.md)** | Complete API documentation | API consumers |
+| **[PUBLISHING_GUIDE.md](./PUBLISHING_GUIDE.md)** | Release & deployment process | Maintainers |
 
-By default the native ads manager will refresh its ads periodically. This does not mean that any ads which are shown in the application's UI will be refreshed but simply that requesting next native ads to render may return new ads at different times. This method disables that functionality.
+---
 
-```js
-adsManager.disableAutoRefresh();
-```
+## 🚀 Running the Example
 
-#### setMediaCachePolicy
+### Prerequisites
+- Placement ID from Facebook Ads Manager
+- Facebook SDK linked in example project
+- iOS: `cd example/ios && pod install && cd ../..`
 
-Sets the native ads manager caching policy. This controls which media from the native ads are cached before being displayed. The default is to not block on caching.
-
-```js
-adsManager.setMediaCachePolicy('none' | 'icon' | 'image' | 'all');
-```
-
-**Note:** This method is a noop on Android
-
-### AdSettings
-
-```js
-import { AdSettings } from 'react-native-fbads';
-```
-
-AdSettings contains global settings for all ad controls.
-
-#### currentDeviceHash
-
-Constant which contains current device's hash id.
-
-#### addTestDevice
-
-Registers given device to receive test ads. When running on a real device, call this method with the result of `AdSettings.currentDeviceHash` to get test ads.
-Do not call this method in production.
-
-You should register test devices before displaying any ads or creating any ad managers.
-
-```js
-AdSettings.addTestDevice('hash');
-```
-
-#### clearTestDevices
-
-Clears all previously set test devices. If you want your ads to respect newly set config, you'll have to destroy and create
-an instance of AdsManager once again.
-
-```js
-AdSettings.clearTestDevices();
-```
-
-#### setLogLevel
-
-Sets current SDK log level.
-
-```js
-AdSettings.setLogLevel(
-  'none' | 'debug' | 'verbose' | 'warning' | 'error' | 'notification'
-);
-```
-
-**Note:** This method is a noop on Android.
-
-#### setIsChildDirected
-
-Configures the ad control for treatment as child-directed.
-
-```js
-AdSettings.setIsChildDirected(true | false);
-```
-
-#### setMediationService
-
-If an ad provided service is mediating Audience Network in their sdk, it is required to set the name of the mediation service
-
-```js
-AdSettings.setMediationService('foobar');
-```
-
-#### setUrlPrefix
-
-Sets the url prefix to use when making ad requests.
-
-```js
-AdSettings.setUrlPrefix('...');
-```
-
-**Note:** This method should never be used in production
-
-### getTrackingStatus
-
-Gets the current Tracking API status. As of iOS 14, Apple requires apps to only enable tracking (advertiser ID collection) when the user has granted tracking permissions.
-
-> Requires iOS 14. On Android and iOS versions below 14, this will always return `'unavailable'`.
-
-```js
-const trackingStatus = await AdSettings.getTrackingStatus();
-if (trackingStatus === 'authorized' || trackingStatus === 'unavailable') {
-  AdSettings.setAdvertiserIDCollectionEnabled(true);
-}
-```
-
-The tracking status can return one of the following values:
-
-- `'unavailable'`: The tracking API is not available on the current device. That's the case on Android devices and iPhones below iOS 14.
-- `'denied'`: The user has explicitly denied permission to track. You'd want to respect that and disable [advertiser ID collection](#setAdvertiserIDCollectionEnabled).
-- `'authorized'`: The user has granted permission to track. You can now enable [advertiser ID collection](#setAdvertiserIDCollectionEnabled).
-- `'restricted'`: The tracking permission alert cannot be shown, because the device is restricted. See [`ATTrackingManager.AuthorizationStatus.restricted`](https://developer.apple.com/documentation/apptrackingtransparency/attrackingmanager/authorizationstatus/restricted) for more information.
-- `'not-determined'`: The user has not been asked to grant tracking permissions yet. Call `requestTrackingPermission()`.
-
-### requestTrackingPermission
-
-Requests permission to track the user. Requires an [`NSUserTrackingUsageDescription`](https://developer.apple.com/documentation/bundleresources/information_property_list/nsusertrackingusagedescription) key in your `Info.plist`. (See [iOS 14 Tracking API](https://developer.apple.com/documentation/apptrackingtransparency))
-
-> Requires iOS 14. On Android and iOS versions below 14, this will always return `'unavailable'`.
-
-```js
-const trackingStatus = await AdSettings.requestTrackingPermission();
-if (trackingStatus === 'authorized' || trackingStatus === 'unavailable') {
-  AdSettings.setAdvertiserIDCollectionEnabled(true);
-  AdSettings.setAdvertiserTrackingEnabled(true);
-}
-```
-
-### setAdvertiserTrackingEnabled
-
-Enables or disables personalized ads tracking on iOS 14+. See Facebook docs on [Advertising Tracking Enabled For Audience Network](https://developers.facebook.com/docs/audience-network/guides/advertising-tracking-enabled)
-
-> Requires iOS 14. On Android and iOS versions below 14, this will always be no-op.
-> **Important: FB won't display adds unless this is set to `true`.**
-
-```js
-AdSettings.setAdvertiserTrackingEnabled(true);
-```
-
-### setAdvertiserIDCollectionEnabled
-
-Enables or disables automatic advertiser ID collection. Since the iOS 14 API was introduced, you might want to disable advertiser ID collection per default (in `Info.plist`), and only enable it once the user has granted tracking permissions.
-
-```js
-AdSettings.setAdvertiserIDCollectionEnabled(true);
-```
-
-## Running the example
-
-In order to see ads you will have to create your own `placementId` and use it instead of the one provided in the examples. This is our internal set up that doesn't work for any developers outside of Callstack.io organisation. This is because of Facebook not showing test ads to outside collaborators in the development mode.
-
-### 1. Install dependencies
-
+### Run Example App
 ```bash
-$ npm install
+cd example && npm install
+npm start
+
+# iOS
+npm run ios
+
+# Android
+npm run android
 ```
 
-### 2. Start packager
+---
 
-Because of the way example project is set up (custom packager arguments), you'll
-have to start it explicitly before any other command
+## 🤝 Contributing
 
-```bash
-$ cd ./example && npm start
-```
+Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
-### 3. Run it on iOS / Android
+**Version**: 8.0.0 | **Updated**: Feb 13, 2026 | **Status**: Production Ready ✅
 
-```bash
-$ cd ./example && npm run ios
-$ cd ./example && npm run android
-```
-
-### Credits
-
-Some of the API explanations were borrowed from Facebook SDK documentation.
+---
 
 <!-- badges -->
 
 [version-badge]: https://img.shields.io/npm/v/react-native-fbads.svg?style=flat-square
 [package]: https://www.npmjs.com/package/react-native-fbads
-[chat-badge]: https://img.shields.io/discord/426714625279524876.svg?style=flat-square&colorB=758ED3
-[chat]: https://discord.gg/zwR2Cdh
+

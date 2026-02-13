@@ -1,0 +1,9 @@
+node_modules
+dist
+build
+*.d.ts
+android/
+ios/
+example/node_modules
+*.min.js
+*.bundle.js
