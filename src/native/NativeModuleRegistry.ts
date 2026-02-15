@@ -1,4 +1,4 @@
-import { NativeModules } from 'react-native';
+import { NativeModules, TurboModuleRegistry, type TurboModule } from 'react-native';
 
 export type SDKLogLevel = 'none' | 'debug' | 'verbose' | 'warning' | 'error' | 'notification';
 
@@ -7,7 +7,7 @@ export type TrackingStatus = 'unavailable' | 'denied' | 'authorized' | 'restrict
 /**
  * Type-safe contract for CTKAdSettingsManager native module
  */
-export interface NativeAdSettingsModuleType {
+export interface NativeAdSettingsModuleType extends TurboModule {
   readonly currentDeviceHash: string;
   addTestDevice(deviceHash: string): void;
   clearTestDevices(): void;
@@ -24,7 +24,7 @@ export interface NativeAdSettingsModuleType {
 /**
  * Type-safe contract for CTKInterstitialAdManager native module
  */
-export interface NativeInterstitialModuleType {
+export interface NativeInterstitialModuleType extends TurboModule {
   showAd(placementId: string): Promise<boolean>;
   preloadAd(placementId: string): Promise<boolean>;
   showPreloadedAd(placementId: string): Promise<boolean>;
@@ -33,7 +33,7 @@ export interface NativeInterstitialModuleType {
 /**
  * Type-safe contract for CTKNativeAdManager native module
  */
-export interface NativeAdManagerModuleType {
+export interface NativeAdManagerModuleType extends TurboModule {
   init(placementId: string, adsToRequest: number): void;
   registerViewsForInteraction(
     nativeAdViewTag: number,
@@ -48,7 +48,7 @@ export interface NativeAdManagerModuleType {
 /**
  * Type-safe contract for CTKNativeAdEmitter native module
  */
-export interface NativeAdEmitterModuleType {
+export interface NativeAdEmitterModuleType extends TurboModule {
   addListener(eventName: string, callback: (data: any) => void): void;
   removeListener(eventName: string, callback: (data: any) => void): void;
 }
@@ -68,24 +68,27 @@ class NativeModuleRegistry {
   /**
    * Safely retrieve or throw a typed native module
    */
-  private getModule<T extends object>(
+  private getModule<T extends TurboModule>(
     moduleName: string,
-    expectedModule: T | undefined
+    legacyModule: T | undefined
   ): T {
-    if (!expectedModule) {
+    const turboModule = TurboModuleRegistry.get<T>(moduleName);
+    const resolvedModule = turboModule ?? legacyModule;
+
+    if (!resolvedModule) {
       throw new Error(
         `[FacebookAds] Native module "${moduleName}" not found. ` +
           'Make sure the library is properly linked and the native code is compiled.'
       );
     }
-    return expectedModule as T;
+    return resolvedModule;
   }
 
   get AdSettings(): NativeAdSettingsModuleType {
     if (!this.adSettingsModule) {
       this.adSettingsModule = this.getModule<NativeAdSettingsModuleType>(
         'CTKAdSettingsManager',
-        NativeModules.CTKAdSettingsManager
+        NativeModules.CTKAdSettingsManager as NativeAdSettingsModuleType | undefined
       );
     }
     return this.adSettingsModule;
@@ -95,7 +98,7 @@ class NativeModuleRegistry {
     if (!this.interstitialModule) {
       this.interstitialModule = this.getModule<NativeInterstitialModuleType>(
         'CTKInterstitialAdManager',
-        NativeModules.CTKInterstitialAdManager
+        NativeModules.CTKInterstitialAdManager as NativeInterstitialModuleType | undefined
       );
     }
     return this.interstitialModule;
@@ -105,7 +108,7 @@ class NativeModuleRegistry {
     if (!this.nativeAdManagerModule) {
       this.nativeAdManagerModule = this.getModule<NativeAdManagerModuleType>(
         'CTKNativeAdManager',
-        NativeModules.CTKNativeAdManager
+        NativeModules.CTKNativeAdManager as NativeAdManagerModuleType | undefined
       );
     }
     return this.nativeAdManagerModule;
@@ -115,7 +118,7 @@ class NativeModuleRegistry {
     if (!this.nativeAdEmitterModule) {
       this.nativeAdEmitterModule = this.getModule<NativeAdEmitterModuleType>(
         'CTKNativeAdEmitter',
-        NativeModules.CTKNativeAdEmitter
+        NativeModules.CTKNativeAdEmitter as NativeAdEmitterModuleType | undefined
       );
     }
     return this.nativeAdEmitterModule;
