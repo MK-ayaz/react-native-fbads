@@ -46,7 +46,9 @@ interface AdWrapperProps {
  * @param Component The component to wrap
  * @returns The wrapped component
  */
-function withNativeAd<T extends HasNativeAd>(Component: React.ComponentType<T>) {
+function withNativeAd<T extends HasNativeAd>(
+  Component: React.ComponentType<T>
+): React.ComponentType<AdWrapperProps & T> {
   return class NativeAdWrapper extends React.Component<
     AdWrapperProps & T,
     AdWrapperState
@@ -120,7 +122,7 @@ function withNativeAd<T extends HasNativeAd>(Component: React.ComponentType<T>) 
         this.state.mediaViewNodeHandle !== prevState.mediaViewNodeHandle;
       const adIconViewNodeHandleChanged =
         this.state.adIconViewNodeHandle !== prevState.adIconViewNodeHandle;
-      const clickableChildrenChanged = areSetsEqual(
+      const clickableChildrenChanged = !areSetsEqual(
         prevState.clickableChildren,
         this.state.clickableChildren
       );
@@ -136,13 +138,12 @@ function withNativeAd<T extends HasNativeAd>(Component: React.ComponentType<T>) 
           return;
         }
 
-        AdsManager.registerViewsForInteractionAsync(
+        void AdsManager.registerViewsForInteractionAsync(
           viewHandle,
           this.state.mediaViewNodeHandle,
           this.state.adIconViewNodeHandle,
           [...this.state.clickableChildren]
         );
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
       }
     }
 
@@ -179,8 +180,10 @@ function withNativeAd<T extends HasNativeAd>(Component: React.ComponentType<T>) 
 
       this.clickableChildrenNodeHandles.set(child, handle);
 
-      this.setState({
-        clickableChildren: this.state.clickableChildren.add(handle)
+      this.setState(({ clickableChildren }) => {
+        const newClickableChildren = new Set(clickableChildren);
+        newClickableChildren.add(handle);
+        return { clickableChildren: newClickableChildren };
       });
     };
 

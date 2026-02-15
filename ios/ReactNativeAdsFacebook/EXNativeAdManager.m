@@ -101,7 +101,7 @@ RCT_EXPORT_METHOD(registerViewsForInteraction:(nonnull NSNumber *)nativeAdViewTa
     }
 
     [nativeAdView registerViewsForInteraction:mediaView adIcon:adIconView clickableViews:clickableViews];
-    resolve(@[]);
+    resolve(@(YES));
   }];
 }
 

@@ -180,7 +180,7 @@ public class NativeAdManager extends ReactContextBaseJavaModule implements Nativ
           Log.w("ClickableViews", Integer.toString(clickableViews.size()) );
 
           nativeAdView.registerViewsForInteraction(mediaView, adIconView, clickableViews);
-          promise.resolve(null);
+          promise.resolve(true);
         } catch (ClassCastException e) {
           promise.reject("E_CANNOT_CAST", e);
         } catch (IllegalViewOperationException e) {

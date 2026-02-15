@@ -1,5 +1,11 @@
 import NativeModuleRegistry from '../native/NativeModuleRegistry';
 import {
+  DeviceEventEmitter,
+  EmitterSubscription,
+  NativeEventEmitter,
+  Platform,
+} from 'react-native';
+import {
   withErrorHandling,
   validatePlacementId,
   FacebookAdsException,
@@ -20,6 +26,12 @@ export interface Subscription {
  * Replaces fbemitter with modern callback-based subscriptions
  */
 export default class NativeAdsManager {
+  private static instances: Set<NativeAdsManager> = new Set();
+
+  private static managersChangedSubscription: EmitterSubscription | null = null;
+
+  private static errorSubscription: EmitterSubscription | null = null;
+
   private placementId: string;
 
   private isValid: boolean = false;
@@ -30,6 +42,57 @@ export default class NativeAdsManager {
   private loadCallbacks: Set<() => void> = new Set();
 
   private errorCallbacks: Set<(error: string) => void> = new Set();
+
+  private static ensureEventSubscriptions(): void {
+    if (
+      NativeAdsManager.managersChangedSubscription &&
+      NativeAdsManager.errorSubscription
+    ) {
+      return;
+    }
+
+    const emitter =
+      Platform.OS === 'ios'
+        ? new NativeEventEmitter(NativeModuleRegistry.NativeAdEmitter as any)
+        : DeviceEventEmitter;
+
+    NativeAdsManager.managersChangedSubscription = emitter.addListener(
+      'CTKNativeAdsManagersChanged',
+      (managersData: Record<string, boolean>) => {
+        NativeAdsManager.instances.forEach((instance) => {
+          instance.handleManagersState(managersData);
+        });
+      }
+    );
+
+    NativeAdsManager.errorSubscription = emitter.addListener(
+      'onAdError',
+      (errorData: unknown) => {
+        const message =
+          typeof errorData === 'string'
+            ? errorData
+            : (errorData as { message?: string } | undefined)?.message ??
+              'Native ad request failed';
+
+        NativeAdsManager.instances.forEach((instance) => {
+          if (instance.isLoading || !instance.isValid) {
+            instance.notifyError(message);
+          }
+        });
+      }
+    );
+  }
+
+  private static cleanupEventSubscriptionsIfNeeded(): void {
+    if (NativeAdsManager.instances.size > 0) {
+      return;
+    }
+
+    NativeAdsManager.managersChangedSubscription?.remove();
+    NativeAdsManager.errorSubscription?.remove();
+    NativeAdsManager.managersChangedSubscription = null;
+    NativeAdsManager.errorSubscription = null;
+  }
 
   /**
    * Register views for interaction
@@ -70,6 +133,8 @@ export default class NativeAdsManager {
 
     this.placementId = placementId;
     this.isLoading = true;
+    NativeAdsManager.instances.add(this);
+    NativeAdsManager.ensureEventSubscriptions();
 
     try {
       NativeModuleRegistry.NativeAdManager.init(placementId, adsToRequest);
@@ -83,6 +148,24 @@ export default class NativeAdsManager {
               error instanceof Error ? error.message : 'Failed to initialize NativeAdsManager'
             );
       this.notifyError(fbError.message);
+    }
+  }
+
+  private handleManagersState(managersData: Record<string, boolean>): void {
+    if (!Object.prototype.hasOwnProperty.call(managersData, this.placementId)) {
+      return;
+    }
+
+    const isReady = Boolean(managersData[this.placementId]);
+    if (isReady) {
+      if (this.isLoading || !this.isValid) {
+        this.notifyLoaded();
+      }
+      return;
+    }
+
+    if (this.isLoading || this.isValid) {
+      this.notifyError('Failed to load native ads');
     }
   }
 
@@ -127,6 +210,16 @@ export default class NativeAdsManager {
   }
 
   /**
+   * Explicit cleanup for long-running screens that create/discard many managers
+   */
+  dispose(): void {
+    NativeAdsManager.instances.delete(this);
+    this.loadCallbacks.clear();
+    this.errorCallbacks.clear();
+    NativeAdsManager.cleanupEventSubscriptionsIfNeeded();
+  }
+
+  /**
    * Disable auto refresh for ads
    */
   disableAutoRefresh(): void {
@@ -155,7 +248,6 @@ export default class NativeAdsManager {
    * Notify subscribers that ads are loaded
    * @internal Reserved for future expansion of telemetry
    */
-  // @ts-expect-error - Reserved for telemetry expansion
   private notifyLoaded(): void {
     this.isValid = true;
     this.isLoading = false;
